@@ -9,7 +9,7 @@ json.expo.scheme = json.expo.scheme || "kaloriapp";
 json.expo.web = {
   ...(json.expo.web || {}),
   bundler: "metro",
-  output: "static",
+  output: "single",
   favicon: "./public/favicon.png"
 };
 json.expo.experiments = { ...(json.expo.experiments || {}), baseUrl: "/kaloriapp" };
