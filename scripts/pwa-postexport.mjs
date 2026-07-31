@@ -1,0 +1,14 @@
+import fs from "node:fs";
+import path from "node:path";
+const dist = "dist";
+const htmlPath = path.join(dist, "index.html");
+if (!fs.existsSync(htmlPath)) throw new Error("Fant ikke dist/index.html. Kjør Expo web export først.");
+fs.cpSync("public", dist, { recursive: true });
+let html = fs.readFileSync(htmlPath, "utf8");
+const tags = `\n<link rel="manifest" href="/kaloriapp/manifest.webmanifest">\n<meta name="theme-color" content="#0D131F">\n<link rel="apple-touch-icon" href="/kaloriapp/icon-192.png">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="Kaloriapp">`;
+if (!html.includes('rel="manifest"')) html = html.replace("</head>", tags + "\n</head>");
+const sw = `<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/kaloriapp/service-worker.js'));}</script>`;
+if (!html.includes("serviceWorker.register")) html = html.replace("</body>", sw + "\n</body>");
+fs.writeFileSync(htmlPath, html);
+fs.writeFileSync(path.join(dist, ".nojekyll"), "");
+console.log("PWA-manifest og service worker er lagt til i dist.");

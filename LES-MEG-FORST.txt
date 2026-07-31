@@ -1,0 +1,20 @@
+KALORIAPP v8.0 – PWA FOR GITHUB PAGES
+
+Repository:
+https://github.com/Garus1996/kaloriapp
+
+Denne ZIP-en skal pakkes ut INNI den eksisterende Expo-prosjektmappen din.
+Velg «erstatt filer» når Windows spør. Den legger også til:
+- public/
+- scripts/
+- .github/workflows/
+
+Etterpå laster du HELE innholdet i prosjektmappen opp til GitHub-repositoryet kaloriapp.
+
+Viktig:
+- package.json, app.json og resten av Expo-prosjektet ditt må også være med på GitHub.
+- Ikke last opp bare ZIP-filen.
+- GitHub Pages skal settes til «GitHub Actions» under Settings > Pages.
+
+Når publiseringen er ferdig, blir adressen:
+https://garus1996.github.io/kaloriapp/

@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Norsk Kaloriapp",
+    "slug": "norsk-kaloriapp",
+    "scheme": "norskkaloriapp",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#F4F7F2"
+    },
+    "android": {
+      "package": "no.garus.kaloriapp"
+    },
+    "ios": {
+      "bundleIdentifier": "no.garus.kaloriapp"
+    }
+  }
+}
