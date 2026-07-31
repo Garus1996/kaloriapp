@@ -33,17 +33,22 @@ jobs:
       - name: Konfigurer GitHub Pages
         run: node scripts/setup-pwa.mjs
 
-      - name: Bygg webappen
-  env:
-    EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-    EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-  run: npx expo export --platform web
+           - name: Bygg webappen
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npx expo export --platform web
 
       - name: Legg til PWA-filer
         run: node scripts/pwa-postexport.mjs
 
       - name: Klargjør Pages
         uses: actions/configure-pages@v5
+
+      - name: Last opp nettsiden
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
 
       - name: Last opp nettsiden
         uses: actions/upload-pages-artifact@v3
