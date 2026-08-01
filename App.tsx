@@ -1510,6 +1510,17 @@ function CalorieApp({
         (food) => food.barcode === barcode
       );
 
+      if (localProduct) {
+        setScannedFood({
+          ...localProduct,
+          calories: toSafeNumber(localProduct.calories),
+          protein: toSafeNumber(localProduct.protein),
+          carbs: toSafeNumber(localProduct.carbs),
+          fat: toSafeNumber(localProduct.fat),
+        });
+        return;
+      }
+
       const fields = [
         "code",
         "product_name",
@@ -1518,21 +1529,53 @@ function CalorieApp({
         "nutriments",
       ].join(",");
 
-      const url =
-        `https://world.openfoodfacts.org/api/v3/product/` +
-        `${encodeURIComponent(barcode)}?fields=${fields}`;
+      // API v2 fungerer mer stabilt direkte fra nettlesere/PWA-er.
+      // Nettleseren tillater ikke at JavaScript setter User-Agent selv.
+      const endpoints = [
+        `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(
+          barcode
+        )}.json?fields=${fields}`,
+        `https://no.openfoodfacts.org/api/v2/product/${encodeURIComponent(
+          barcode
+        )}.json?fields=${fields}`,
+      ];
 
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": "NorskKaloriapp/0.2",
-        },
-      });
+      let data: OpenFoodFactsResponse | null = null;
+      let lastStatus = 0;
 
-      if (!response.ok) {
-        throw new Error("Produktoppslaget feilet");
+      for (const url of endpoints) {
+        try {
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+          });
+
+          lastStatus = response.status;
+
+          if (!response.ok) {
+            continue;
+          }
+
+          const candidate =
+            (await response.json()) as OpenFoodFactsResponse;
+
+          if (candidate.product) {
+            data = candidate;
+            break;
+          }
+        } catch {
+          // Prøv neste Open Food Facts-endepunkt.
+        }
       }
 
-      const data: OpenFoodFactsResponse = await response.json();
+      if (!data) {
+        throw new Error(
+          `Produktoppslaget feilet${lastStatus ? ` (${lastStatus})` : ""}`
+        );
+      }
+
       const product = data.product;
 
       if (!product) {

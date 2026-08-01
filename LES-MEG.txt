@@ -1,15 +1,18 @@
-NIRO-logooppdatering
+# NIRO v8.3 – strekkodeoppslag på web fikset
 
-1. Pakk ut ZIP-filen.
-2. Kopier ALLE filene og mappene inn i prosjektmappen norsk-kaloriapp-fixed.
-3. Velg «Erstatt filene» når Windows spør.
-4. Test lokalt med: npx expo start -c
-5. Publiser med:
+Endret:
+- Open Food Facts-oppslaget bruker API v2, som fungerer bedre i nettleser/PWA.
+- Fjernet forsøk på å sette User-Agent fra nettleseren.
+- Bruker Accept: application/json.
+- Prøver både world.openfoodfacts.org og no.openfoodfacts.org.
+- Egne produkter med samme strekkode brukes først.
+- Alle tidligere feilrettinger og NIRO-logoen er beholdt.
+
+Installer:
+1. Kopier alle filer og mapper inn i prosjektmappen.
+2. Velg "Erstatt filene i mål".
+3. Test lokalt med: npx expo start --web -c
+4. Publiser med:
    git add .
-   git commit -m "Legg til NIRO-logo"
+   git commit -m "Fiks strekkodeoppslag på web"
    git push
-
-Når GitHub Actions er grønn:
-- Slett den gamle nettappen fra hjemskjermen.
-- Åpne https://garus1996.github.io/kaloriapp/ i Safari/Chrome.
-- Oppdater siden og legg den til på hjemskjermen på nytt.
