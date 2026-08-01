@@ -1521,59 +1521,71 @@ function CalorieApp({
         return;
       }
 
-      const fields = [
-        "code",
-        "product_name",
-        "product_name_no",
-        "generic_name",
-        "nutriments",
-      ].join(",");
-
-      // API v2 fungerer mer stabilt direkte fra nettlesere/PWA-er.
-      // Nettleseren tillater ikke at JavaScript setter User-Agent selv.
-      const endpoints = [
-        `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(
-          barcode
-        )}.json?fields=${fields}`,
-        `https://no.openfoodfacts.org/api/v2/product/${encodeURIComponent(
-          barcode
-        )}.json?fields=${fields}`,
-      ];
-
       let data: OpenFoodFactsResponse | null = null;
-      let lastStatus = 0;
 
-      for (const url of endpoints) {
-        try {
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
+      // I en publisert PWA kan mobilnettleseren blokkere eller avbryte
+      // direkte forespørsler til Open Food Facts. Bruk Supabase-funksjonen
+      // som server-proxy først. Den samme funksjonen virker på iPhone,
+      // Android og vanlig web.
+      try {
+        const { data: proxyData, error: proxyError } =
+          await supabase.functions.invoke("lookup-barcode", {
+            body: { barcode },
           });
 
-          lastStatus = response.status;
-
-          if (!response.ok) {
-            continue;
-          }
-
-          const candidate =
-            (await response.json()) as OpenFoodFactsResponse;
-
-          if (candidate.product) {
-            data = candidate;
-            break;
-          }
-        } catch {
-          // Prøv neste Open Food Facts-endepunkt.
+        if (!proxyError && proxyData?.product) {
+          data = proxyData as OpenFoodFactsResponse;
         }
+      } catch {
+        // Lokal utvikling kan fortsatt bruke direkteoppslaget under.
       }
 
       if (!data) {
-        throw new Error(
-          `Produktoppslaget feilet${lastStatus ? ` (${lastStatus})` : ""}`
-        );
+        const fields = [
+          "code",
+          "product_name",
+          "product_name_no",
+          "generic_name",
+          "nutriments",
+        ].join(",");
+
+        const endpoints = [
+          `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(
+            barcode
+          )}.json?fields=${fields}`,
+          `https://no.openfoodfacts.org/api/v2/product/${encodeURIComponent(
+            barcode
+          )}.json?fields=${fields}`,
+        ];
+
+        let lastStatus = 0;
+
+        for (const url of endpoints) {
+          try {
+            const response = await fetch(url);
+            lastStatus = response.status;
+
+            if (!response.ok) {
+              continue;
+            }
+
+            const candidate =
+              (await response.json()) as OpenFoodFactsResponse;
+
+            if (candidate.product) {
+              data = candidate;
+              break;
+            }
+          } catch {
+            // Prøv neste endepunkt.
+          }
+        }
+
+        if (!data) {
+          throw new Error(
+            `Produktoppslaget feilet${lastStatus ? ` (${lastStatus})` : ""}`
+          );
+        }
       }
 
       const product = data.product;

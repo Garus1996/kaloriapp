@@ -1,0 +1,21 @@
+NIRO v8.4 – strekkode på publisert mobilapp
+
+Hvorfor:
+GitHub Actions kan være grønn selv om et eksternt API-kall feiler når appen kjører.
+Den publiserte PWA-en bruker nå en Supabase Edge Function som mellomledd mot
+Open Food Facts. Dette unngår forskjeller mellom lokal web og mobil PWA.
+
+Etter at filene er kopiert inn i prosjektet, kjør én gang:
+
+1) npx supabase login
+2) npx supabase link --project-ref grkvsjqfibnxwngbyffo
+3) npx supabase functions deploy lookup-barcode --no-verify-jwt
+
+Deretter publiser appen:
+
+git add .
+git commit -m "Fiks strekkode i publisert mobilapp"
+git push
+
+Når GitHub Actions er grønn, slett den gamle PWA-en fra hjemskjermen,
+åpne nettadressen i Safari/Chrome og installer den på nytt.
