@@ -1,20 +1,34 @@
 {
   "expo": {
-    "name": "Norsk Kaloriapp",
-    "slug": "norsk-kaloriapp",
+    "name": "NIRO",
+    "slug": "kaloriapp",
     "scheme": "norskkaloriapp",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F4F7F2"
+      "backgroundColor": "#080A14"
     },
     "android": {
-      "package": "no.garus.kaloriapp"
+      "package": "no.garus.kaloriapp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#080A14"
+      }
     },
     "ios": {
       "bundleIdentifier": "no.garus.kaloriapp"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./public/favicon.png"
+    },
+    "experiments": {
+      "baseUrl": "/kaloriapp"
     }
   }
 }

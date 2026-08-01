@@ -374,6 +374,27 @@ function CalorieApp({
     if (toastTimer.current) clearTimeout(toastTimer.current);
   }, []);
 
+  const confirmDestructiveAction = (
+    title: string,
+    message: string,
+    onConfirm: () => void
+  ) => {
+    if (Platform.OS === "web") {
+      const confirmed =
+        typeof window !== "undefined"
+          ? window.confirm(`${title}\n\n${message}`)
+          : false;
+
+      if (confirmed) onConfirm();
+      return;
+    }
+
+    Alert.alert(title, message, [
+      { text: "Avbryt", style: "cancel" },
+      { text: "Slett", style: "destructive", onPress: onConfirm },
+    ]);
+  };
+
   useEffect(() => {
     if (!scannerOpen || scannedFood || isLookingUpProduct) {
       scannerLinePosition.stopAnimation();
@@ -2047,27 +2068,20 @@ function CalorieApp({
   };
 
   const deleteEditedItem = () => {
-    if (!editingItem) {
-      return;
-    }
+    if (!editingItem) return;
 
-    Alert.alert(
+    const diaryId = editingItem.diaryId;
+
+    confirmDestructiveAction(
       "Slett matvare",
       "Vil du slette denne registreringen?",
-      [
-        {
-          text: "Avbryt",
-          style: "cancel",
-        },
-        {
-          text: "Slett",
-          style: "destructive",
-          onPress: () => {
-            removeFood(editingItem.diaryId);
-            setEditingItem(null);
-          },
-        },
-      ]
+      () => {
+        updateDiary((currentDiary) =>
+          currentDiary.filter((item) => item.diaryId !== diaryId)
+        );
+        setEditingItem(null);
+        showToast("Matvaren ble slettet");
+      }
     );
   };
 
@@ -2540,14 +2554,62 @@ function CalorieApp({
       return;
     }
 
+    const nextProteinGoal = String(Math.round(protein));
+    const nextCarbsGoal = String(Math.round(carbs));
+    const nextFatGoal = String(Math.round(fat));
+
+    // 1 g protein = 4 kcal, 1 g karbohydrat = 4 kcal,
+    // og 1 g fett = 9 kcal. Kalorimålet skal derfor alltid
+    // følge de lagrede makromålene.
+    const nextCalorieGoal = Math.round(
+      protein * 4 + carbs * 4 + fat * 9
+    );
+
     setProfile((current) => ({
       ...current,
-      proteinGoal: String(Math.round(protein)),
-      carbsGoal: String(Math.round(carbs)),
-      fatGoal: String(Math.round(fat)),
+      proteinGoal: nextProteinGoal,
+      carbsGoal: nextCarbsGoal,
+      fatGoal: nextFatGoal,
     }));
+    setCalorieGoal(nextCalorieGoal);
 
+    setProteinGoalInput(nextProteinGoal);
+    setCarbsGoalInput(nextCarbsGoal);
+    setFatGoalInput(nextFatGoal);
     setMacroGoalOpen(false);
+    showToast(`Makromål og kalorimål oppdatert til ${nextCalorieGoal} kcal`);
+  };
+
+  const saveProfileChanges = () => {
+    Keyboard.dismiss();
+
+    const age = Number(profile.age.replace(",", "."));
+    const height = Number(profile.heightCm.replace(",", "."));
+    const weight = Number(profile.weightKg.replace(",", "."));
+
+    if (!Number.isFinite(age) || age < 13 || age > 120) {
+      Alert.alert("Ugyldig alder", "Skriv inn en alder mellom 13 og 120 år.");
+      return;
+    }
+
+    if (!Number.isFinite(height) || height < 100 || height > 250) {
+      Alert.alert("Ugyldig høyde", "Skriv inn en høyde mellom 100 og 250 cm.");
+      return;
+    }
+
+    if (!Number.isFinite(weight) || weight < 30 || weight > 350) {
+      Alert.alert("Ugyldig vekt", "Skriv inn en vekt mellom 30 og 350 kg.");
+      return;
+    }
+
+    setProfile((current) => ({
+      ...current,
+      age: String(Math.round(age)),
+      heightCm: String(Math.round(height * 10) / 10),
+      weightKg: String(Math.round(weight * 10) / 10),
+    }));
+    setProfileOpen(false);
+    showToast("Kroppsdataene ble lagret");
   };
 
   const saveTargetWeight = () => {
@@ -3733,7 +3795,12 @@ function CalorieApp({
                   <Text style={styles.profileSectionTitle}>Kroppsdata</Text>
                 </View>
 
-                <View style={styles.profileBodyCard}>
+                <Pressable
+                  style={styles.profileBodyCard}
+                  onPress={() => setProfileOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Rediger personlig kroppsdata"
+                >
                   <View style={styles.profileBodyGrid}>
                     <View style={styles.profileBodyItem}>
                       <Text style={styles.profileBodyLabel}>Alder</Text>
@@ -3752,7 +3819,8 @@ function CalorieApp({
                       <Text style={styles.profileBodyValue}>{profile.activity}</Text>
                     </View>
                   </View>
-                </View>
+                  <Text style={styles.profileCardArrow}>Trykk for å redigere  ›</Text>
+                </Pressable>
 
                 <View style={styles.profileSectionHeader}>
                   <Text style={styles.profileSectionEyebrow}>INNSTILLINGER</Text>
@@ -5380,6 +5448,15 @@ function CalorieApp({
                 <Text style={styles.calculatorNote}>
                   Beregningen er et grovt estimat og ikke medisinsk rådgivning.
                 </Text>
+
+                <Pressable
+                  style={styles.editSaveButton}
+                  onPress={saveProfileChanges}
+                >
+                  <Text style={styles.editSaveButtonText}>
+                    Lagre kroppsdata
+                  </Text>
+                </Pressable>
               </>
             }
           />

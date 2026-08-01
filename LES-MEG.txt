@@ -1,0 +1,15 @@
+NIRO-logooppdatering
+
+1. Pakk ut ZIP-filen.
+2. Kopier ALLE filene og mappene inn i prosjektmappen norsk-kaloriapp-fixed.
+3. Velg «Erstatt filene» når Windows spør.
+4. Test lokalt med: npx expo start -c
+5. Publiser med:
+   git add .
+   git commit -m "Legg til NIRO-logo"
+   git push
+
+Når GitHub Actions er grønn:
+- Slett den gamle nettappen fra hjemskjermen.
+- Åpne https://garus1996.github.io/kaloriapp/ i Safari/Chrome.
+- Oppdater siden og legg den til på hjemskjermen på nytt.
