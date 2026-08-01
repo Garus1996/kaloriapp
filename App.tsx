@@ -9,7 +9,7 @@ import Svg, { Circle } from "react-native-svg";
 
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
-import { Component, useEffect, useMemo, useRef, useState } from "react";
+import { Component, createElement, useEffect, useMemo, useRef, useState } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 import {
   ActivityIndicator,
@@ -311,6 +311,8 @@ function CalorieApp({
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerTorch, setScannerTorch] = useState(false);
   const scannerLinePosition = useRef(new Animated.Value(0)).current;
+  const webVideoRef = useRef<any>(null);
+  const webScannerControlsRef = useRef<any>(null);
   const calorieRingProgress = useRef(new Animated.Value(0)).current;
   const dashboardFade = useRef(new Animated.Value(0)).current;
   const screenFade = useRef(new Animated.Value(1)).current;
@@ -1668,6 +1670,84 @@ function CalorieApp({
       setIsLookingUpProduct(false);
     }
   };
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    let cancelled = false;
+
+    const stopWebScanner = () => {
+      try {
+        webScannerControlsRef.current?.stop?.();
+      } catch {
+        // Kameraet kan allerede være stoppet av nettleseren.
+      }
+      webScannerControlsRef.current = null;
+
+      const video = webVideoRef.current as HTMLVideoElement | null;
+      const stream = video?.srcObject as MediaStream | null;
+      stream?.getTracks?.().forEach((track) => track.stop());
+      if (video) video.srcObject = null;
+    };
+
+    if (!scannerOpen || scannedFood || hasScanned || isLookingUpProduct) {
+      stopWebScanner();
+      return stopWebScanner;
+    }
+
+    const timer = setTimeout(async () => {
+      const video = webVideoRef.current as HTMLVideoElement | null;
+      if (!video || cancelled) return;
+
+      try {
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        const reader = new BrowserMultiFormatReader();
+
+        const controls = await reader.decodeFromConstraints(
+          {
+            audio: false,
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          },
+          video,
+          (result) => {
+            if (!result || cancelled) return;
+            const value = result.getText().trim();
+            if (!value) return;
+            void handleBarcodeScanned({
+              data: value,
+              type: "ean13",
+              cornerPoints: [],
+              bounds: { origin: { x: 0, y: 0 }, size: { width: 0, height: 0 } },
+            } as BarcodeScanningResult);
+          }
+        );
+
+        if (cancelled) {
+          controls.stop();
+        } else {
+          webScannerControlsRef.current = controls;
+        }
+      } catch (error) {
+        console.error("Webskanneren kunne ikke starte", error);
+        if (!cancelled) {
+          Alert.alert(
+            "Kunne ikke starte skanneren",
+            "Kontroller at kamera er tillatt i nettleseren, og prøv igjen."
+          );
+        }
+      }
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      stopWebScanner();
+    };
+  }, [scannerOpen, scannedFood, hasScanned, isLookingUpProduct]);
 
   const selectedAmount = Number(amountInput);
   const validAmount =
@@ -5645,24 +5725,41 @@ function CalorieApp({
           {!scannedFood ? (
             <>
               <View style={styles.scannerCameraArea}>
-                <CameraView
-                  style={styles.camera}
-                  facing="back"
-                  autofocus="on"
-                  enableTorch={scannerTorch}
-                  onBarcodeScanned={
-                    hasScanned ? undefined : handleBarcodeScanned
-                  }
-                  barcodeScannerSettings={{
-                    barcodeTypes: [
-                      "ean13",
-                      "ean8",
-                      "upc_a",
-                      "upc_e",
-                      "code128",
-                    ],
-                  }}
-                />
+                {Platform.OS === "web"
+                  ? createElement("video", {
+                      ref: webVideoRef,
+                      autoPlay: true,
+                      muted: true,
+                      playsInline: true,
+                      style: {
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        backgroundColor: "#000",
+                      },
+                    })
+                  : (
+                    <CameraView
+                      style={styles.camera}
+                      facing="back"
+                      autofocus="on"
+                      enableTorch={scannerTorch}
+                      onBarcodeScanned={
+                        hasScanned ? undefined : handleBarcodeScanned
+                      }
+                      barcodeScannerSettings={{
+                        barcodeTypes: [
+                          "ean13",
+                          "ean8",
+                          "upc_a",
+                          "upc_e",
+                          "code128",
+                        ],
+                      }}
+                    />
+                  )}
 
                 <View
                   pointerEvents="none"
@@ -5718,6 +5815,7 @@ function CalorieApp({
                   )}
                 </View>
 
+                {Platform.OS !== "web" && (
                 <View style={styles.scannerCameraControls}>
                   <Pressable
                     style={[
@@ -5734,6 +5832,7 @@ function CalorieApp({
                     </Text>
                   </Pressable>
                 </View>
+                )}
 
                 <View style={styles.scannerInstructions}>
                   {isLookingUpProduct ? (

@@ -1,0 +1,20 @@
+NIRO v8.5 – webskanner for iPhone/Android PWA
+
+Denne versjonen bruker:
+- expo-camera i Expo Go/native
+- @zxing/browser i GitHub Pages/webappen
+
+Etter at filene er kopiert inn i prosjektet, kjør:
+
+npm install
+npx expo start --web -c
+
+Når skanning fungerer lokalt på web:
+
+git add .
+git commit -m "Fiks strekkodeskanning i mobilwebapp"
+git push
+
+Vent til GitHub Actions blir grønn. Slett den gamle installerte
+nettappen på mobilen, åpne GitHub Pages-lenken i Safari/Chrome og
+installer nettappen på nytt.
